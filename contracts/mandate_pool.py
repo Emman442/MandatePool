@@ -370,9 +370,14 @@ class MandatePool(gl.Contract):
             verdict = "abstain"
         row["verdict"] = verdict
         if verdict == "approve":
-            row["status"] = "approved"
             if row["action"] == "buy":
-                self.reserved = u256(int(self.reserved) + int(row["amount"]))
+                amount = int(row["amount"])
+                free = self._free()
+                cap = (int(self.cash) * int(self.max_position_bps)) // 10000
+                if amount > free or amount > cap:
+                    _fail("amount exceeds free cash or position cap")
+                self.reserved = u256(int(self.reserved) + amount)
+            row["status"] = "approved"
         else:
             row["status"] = "rejected"
         data[str(pid)] = row
